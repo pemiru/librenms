@@ -319,10 +319,13 @@ class DiscoveryRuleBuilder
         $valueTypeMap = ItemBuilder::VALUE_TYPE_MAP ?? [];
         $valueType = $valueTypeMap[$class] ?? 'FLOAT';
 
+        // Replace the last OID segment (instance index) with the discovery macro
+        $prototypeOid = preg_replace('/\.\d+$/', '.{#SNMPINDEX}', $sensor->sensor_oid) ?: $sensor->sensor_oid;
+
         $prototype = [
             'name' => "{$classLabel} {#SENSOR_INDEX}",
             'type' => 'SNMP_AGENT',
-            'snmp_oid' => $sensor->sensor_oid,
+            'snmp_oid' => $prototypeOid,
             'key' => "sensor.{$class}.{$type}[{#SENSOR_INDEX}]",
             'value_type' => $valueType,
             'units' => $units,
@@ -390,15 +393,18 @@ class DiscoveryRuleBuilder
         }
 
         if ($sensor->sensor_limit_warn !== null) {
-            $triggers[] = [
+            $warnHighTrigger = [
                 'expression' => 'last(/' . $templateName . '/' . $itemKey . ')>{$SENSOR_' . $classUpper . '_WARN_HIGH}',
                 'name' => "{$classLabel} {#SENSOR_INDEX}: High warning value",
                 'priority' => 'WARNING',
                 'description' => "{$classLabel} sensor value exceeds warning threshold",
-                'dependencies' => [
-                    ['name' => "{$classLabel} {#SENSOR_INDEX}: High critical value"],
-                ],
             ];
+            if ($sensor->sensor_limit !== null) {
+                $warnHighTrigger['dependencies'] = [
+                    ['name' => "{$classLabel} {#SENSOR_INDEX}: High critical value"],
+                ];
+            }
+            $triggers[] = $warnHighTrigger;
         }
 
         if ($sensor->sensor_limit_low !== null) {
@@ -411,15 +417,18 @@ class DiscoveryRuleBuilder
         }
 
         if ($sensor->sensor_limit_low_warn !== null) {
-            $triggers[] = [
+            $warnLowTrigger = [
                 'expression' => 'last(/' . $templateName . '/' . $itemKey . ')<{$SENSOR_' . $classUpper . '_WARN_LOW}',
                 'name' => "{$classLabel} {#SENSOR_INDEX}: Low warning value",
                 'priority' => 'WARNING',
                 'description' => "{$classLabel} sensor value is below warning threshold",
-                'dependencies' => [
-                    ['name' => "{$classLabel} {#SENSOR_INDEX}: Low critical value"],
-                ],
             ];
+            if ($sensor->sensor_limit_low !== null) {
+                $warnLowTrigger['dependencies'] = [
+                    ['name' => "{$classLabel} {#SENSOR_INDEX}: Low critical value"],
+                ];
+            }
+            $triggers[] = $warnLowTrigger;
         }
 
         return $triggers;
