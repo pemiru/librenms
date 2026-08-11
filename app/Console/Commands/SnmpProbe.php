@@ -159,8 +159,13 @@ class SnmpProbe extends LnmsCommand
         $this->line('<fg=yellow>Running discovery modules …</>');
 
         $deviceArray = $device->toArray();
-        $os          = OS::make($deviceArray);
+        // 'os' is null until the core module runs; default to 'generic' so
+        // OS::make() does not trigger an "Undefined array key" PHP warning.
+        $deviceArray['os'] ??= 'generic';
+        $os           = OS::make($deviceArray);
         $connectivity = new ConnectivityHelper($device);
+
+        $snmpFailed = false;
 
         $modules = [
             'core',
@@ -188,10 +193,20 @@ class SnmpProbe extends LnmsCommand
                 $this->line("  <fg=cyan>[$moduleName]</> discovering …");
                 $instance->discover($os);
 
+                // After core module: check if SNMP actually returned data.
+                if ($moduleName === 'core') {
+                    $device->refresh();
+                    if ($device->sysObjectID === null && $device->sysDescr === null) {
+                        $snmpFailed = true;
+                        $this->warn('SNMP query returned no data. Check that the host is reachable and that the community / credentials are correct.');
+                    }
+                }
+
                 // After core/os modules the OS may have changed – reload device.
                 if (in_array($moduleName, ['core', 'os'])) {
                     $device->refresh();
                     $deviceArray = $device->toArray();
+                    $deviceArray['os'] ??= 'generic';
                     if ($osGroup = LibrenmsConfig::get("os.{$device->os}.group")) {
                         $deviceArray['os_group'] = $osGroup;
                     }
@@ -200,6 +215,11 @@ class SnmpProbe extends LnmsCommand
             } catch (\Throwable $e) {
                 $this->line("  <fg=red>[$moduleName] error:</> " . $e->getMessage());
             }
+        }
+
+        if ($snmpFailed) {
+            $this->newLine();
+            $this->error('Discovery completed with no SNMP data. The report below will be empty.');
         }
 
         $this->newLine();
