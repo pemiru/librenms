@@ -77,6 +77,16 @@ class SnmpProbe extends LnmsCommand
         // 1. Switch to an ephemeral in-memory SQLite database so no MySQL
         //    (or any other persistent DB) is required.
         // ----------------------------------------------------------------
+        if (! in_array('sqlite', \PDO::getAvailableDrivers())) {
+            $this->error(
+                'The PHP SQLite extension (pdo_sqlite) is not installed. ' .
+                'snmp:probe uses an in-memory SQLite database and requires it. ' .
+                'Install it with: apt install php' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '-sqlite3  (or the equivalent for your OS/PHP version)'
+            );
+
+            return 1;
+        }
+
         config(['database.default' => 'testing_memory']);
         $this->line('<fg=yellow>Setting up in-memory database …</>');
         Artisan::call('migrate', ['--force' => true, '--quiet' => true]);
