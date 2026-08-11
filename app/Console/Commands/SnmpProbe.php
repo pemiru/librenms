@@ -469,14 +469,15 @@ class SnmpProbe extends LnmsCommand
         $seen = [];
         foreach ($this->snmpQueries as $q) {
             foreach ((array) $q['oids'] as $oid) {
-                if (isset($seen[$oid])) {
+                $oidStr = (string) $oid;
+                if (isset($seen[$oidStr])) {
                     continue;
                 }
-                $seen[$oid] = true;
+                $seen[$oidStr] = true;
                 $this->line(sprintf(
                     '  [<fg=cyan>%s</>] <fg=yellow>%s</>',
                     $q['method'] ?? 'snmp',
-                    $oid
+                    $oidStr
                 ));
             }
         }

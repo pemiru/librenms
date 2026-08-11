@@ -125,7 +125,7 @@ class Ipv4Addresses implements Module
             $data->ipv4_prefixlen = $pfxLen;
             $data->context_name = $context;
 
-            if ($data->ipv4_prefixlen > 0 && $data->ipv4_prefixlen < 32) {
+            if ($data->ipv4_prefixlen > 0 && $data->ipv4_prefixlen <= 32) {
                 $addr = new IPv4($data->ipv4_address . '/' . $data->ipv4_prefixlen);
                 $netaddr = $addr->getNetwork();
                 if ($nets->has($netaddr)) {
