@@ -198,24 +198,24 @@ class SnmpProbe extends LnmsCommand
                 $this->line("  <fg=cyan>[$moduleName]</> discovering …");
                 $instance->discover($os);
 
-                // After core module: check if SNMP actually returned data.
-                if ($moduleName === 'core') {
-                    $device->refresh();
-                    if ($device->sysObjectID === null && $device->sysDescr === null) {
-                        $snmpFailed = true;
-                        $this->warn('SNMP query returned no data. Check that the host is reachable and that the community / credentials are correct.');
-                    }
-                }
-
-                // After core/os modules the OS may have changed – reload device.
+                // After core/os the OS may have changed; rebuild deviceArray from the
+                // in-memory DeviceCache model so we don't lose unsaved Core fields
+                // (Core fills sysObjectID/sysDescr/sysName in-memory but does not save
+                // them to the DB during discover, so $device->refresh() would wipe them).
                 if (in_array($moduleName, ['core', 'os'])) {
-                    $device->refresh();
+                    $device    = DeviceCache::getPrimary();
                     $deviceArray = $device->toArray();
                     $deviceArray['os'] ??= 'generic';
                     if ($osGroup = LibrenmsConfig::get("os.{$device->os}.group")) {
                         $deviceArray['os_group'] = $osGroup;
                     }
                     $os = OS::make($deviceArray);
+
+                    // Check SNMP availability after core module.
+                    if ($moduleName === 'core' && $device->sysObjectID === null && $device->sysDescr === null) {
+                        $snmpFailed = true;
+                        $this->warn('SNMP query returned no data. Check that the host is reachable and that the community / credentials are correct.');
+                    }
                 }
             } catch (\Throwable $e) {
                 $this->line("  <fg=red>[$moduleName] error:</> " . $e->getMessage());
@@ -230,9 +230,10 @@ class SnmpProbe extends LnmsCommand
         $this->newLine();
 
         // ----------------------------------------------------------------
-        // 6. Reload fresh device data and print the report.
+        // 6. Use the in-memory DeviceCache model for the report so that
+        //    fields populated by Core (but not yet persisted) are visible.
         // ----------------------------------------------------------------
-        $device->refresh();
+        $device = DeviceCache::getPrimary();
         $this->printReport($device);
 
         return 0;
