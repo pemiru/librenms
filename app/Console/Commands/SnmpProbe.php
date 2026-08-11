@@ -16,9 +16,14 @@
  *   ./lnms snmp:probe router.example.com --v3 \
  *       -u admin -a SHA -A authpass -x AES -X privpass
  *
- *   # Passwords with special shell characters (& $ ! etc.) must be quoted:
+ *   # Passwords with special shell characters (& $ ! etc.):
+ *   #   Option 1 — single-quote the value so the shell treats it literally:
  *   ./lnms snmp:probe router.example.com --v3 \
  *       -u admin -a SHA -A 'p@ss&word' -x AES -X 'pr1v&pass'
+ *
+ *   #   Option 2 — pass via environment variables (immune to all shell quoting):
+ *   SNMP_AUTH_PASS='p@ss&word' SNMP_PRIV_PASS='pr1v&pass' \
+ *   ./lnms snmp:probe router.example.com --v3 -u admin -a SHA -x AES
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,9 +74,9 @@ class SnmpProbe extends LnmsCommand
 
         // SNMPv3 options
         $this->addOption('security-name', 'u', InputOption::VALUE_REQUIRED, 'SNMPv3 security/user name', 'root');
-        $this->addOption('auth-password', 'A', InputOption::VALUE_REQUIRED, 'SNMPv3 authentication password (quote if it contains shell special characters)');
+        $this->addOption('auth-password', 'A', InputOption::VALUE_REQUIRED, 'SNMPv3 authentication password (or set SNMP_AUTH_PASS env var)');
         $this->addOption('auth-protocol', 'a', InputOption::VALUE_REQUIRED, 'SNMPv3 auth protocol (MD5, SHA, SHA-256, SHA-512)', 'MD5');
-        $this->addOption('privacy-password', 'X', InputOption::VALUE_REQUIRED, 'SNMPv3 privacy/encryption password (quote if it contains shell special characters)');
+        $this->addOption('privacy-password', 'X', InputOption::VALUE_REQUIRED, 'SNMPv3 privacy/encryption password (or set SNMP_PRIV_PASS env var)');
         $this->addOption('privacy-protocol', 'x', InputOption::VALUE_REQUIRED, 'SNMPv3 privacy protocol (AES, DES, AES-256)', 'AES');
     }
 
@@ -100,8 +105,11 @@ class SnmpProbe extends LnmsCommand
         // ----------------------------------------------------------------
         // 2. Build the Device model (in-memory only).
         // ----------------------------------------------------------------
-        $auth = $this->option('auth-password');
-        $priv = $this->option('privacy-password');
+        // Environment-variable fallback lets users pass credentials with
+        // special characters (& $ ! ' etc.) without any shell-quoting issues:
+        //   SNMP_AUTH_PASS='p@ss&word' SNMP_PRIV_PASS='pr1v&pass' ./lnms snmp:probe …
+        $auth = $this->option('auth-password') ?? getenv('SNMP_AUTH_PASS') ?: null;
+        $priv = $this->option('privacy-password') ?? getenv('SNMP_PRIV_PASS') ?: null;
 
         $snmpver = 'v2c';
         if ($this->option('v3')) {
