@@ -186,6 +186,11 @@ class StringHelpers
             $hex = str_replace($seperator, '', $no_nulls);
         }
 
+        // hex2bin() requires an even-length string; pad with a leading zero if needed.
+        if (strlen($hex) % 2 !== 0) {
+            $hex = '0' . $hex;
+        }
+
         return hex2bin($hex);
     }
 
