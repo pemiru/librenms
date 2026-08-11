@@ -116,21 +116,26 @@ class SnmpProbe extends LnmsCommand
         }
 
         $device = Device::create([
-            'hostname'    => $this->argument('hostname'),
-            'snmpver'     => $snmpver,
-            'port'        => (int) $this->option('port'),
-            'transport'   => $this->option('transport'),
-            'community'   => $this->option('community'),
-            'authlevel'   => $authlevel,
-            'authname'    => $this->option('security-name'),
-            'authpass'    => $auth,
-            'authalgo'    => $this->option('auth-protocol'),
-            'cryptopass'  => $priv,
-            'cryptoalgo'  => $this->option('privacy-protocol') ?: '',
-            'status'      => 1,
+            'hostname'     => $this->argument('hostname'),
+            'snmpver'      => $snmpver,
+            'port'         => (int) $this->option('port'),
+            'transport'    => $this->option('transport'),
+            'community'    => $this->option('community'),
+            'authlevel'    => $authlevel,
+            'authname'     => $this->option('security-name'),
+            'authpass'     => $auth,
+            'authalgo'     => $this->option('auth-protocol'),
+            'cryptopass'   => $priv,
+            'cryptoalgo'   => $this->option('privacy-protocol') ?: '',
+            'status'       => 1,
             'status_reason' => '',
+            'snmp_disable' => false,
+            'disabled'     => false,
         ]);
 
+        // Put the device in the cache directly so DeviceCache::getPrimary() and
+        // SnmpQuery can find it without an extra DB round-trip.
+        DeviceCache::fake($device);
         DeviceCache::setPrimary($device->device_id);
 
         // ----------------------------------------------------------------
