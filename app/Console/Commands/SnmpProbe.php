@@ -167,6 +167,9 @@ class SnmpProbe extends LnmsCommand
         // 'os' is null until the core module runs; default to 'generic' so
         // OS::make() does not trigger an "Undefined array key" PHP warning.
         $deviceArray['os'] ??= 'generic';
+        // 'port_association_mode' must be present (falsy = use default) so that
+        // the ports discovery module does not throw an "Undefined array key" warning.
+        $deviceArray['port_association_mode'] ??= 0;
         $os           = OS::make($deviceArray);
         $connectivity = new ConnectivityHelper($device);
 
@@ -206,6 +209,7 @@ class SnmpProbe extends LnmsCommand
                     $device    = DeviceCache::getPrimary();
                     $deviceArray = $device->toArray();
                     $deviceArray['os'] ??= 'generic';
+                    $deviceArray['port_association_mode'] ??= 0;
                     if ($osGroup = LibrenmsConfig::get("os.{$device->os}.group")) {
                         $deviceArray['os_group'] = $osGroup;
                     }
@@ -417,8 +421,8 @@ class SnmpProbe extends LnmsCommand
                 $this->truncate((string) $port->ifDescr, 30),
                 $port->ifType      ?? '',
                 $port->ifSpeed     ? number_format($port->ifSpeed) : '',
-                $port->ifAdminStatus ?? '',
-                $port->ifOperStatus  ?? '',
+                $port->ifAdminStatus?->value ?? '',
+                $port->ifOperStatus?->value  ?? '',
             ];
         }
 
