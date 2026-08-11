@@ -16,6 +16,10 @@
  *   ./lnms snmp:probe router.example.com --v3 \
  *       -u admin -a SHA -A authpass -x AES -X privpass
  *
+ *   # Passwords with special shell characters (& $ ! etc.) must be quoted:
+ *   ./lnms snmp:probe router.example.com --v3 \
+ *       -u admin -a SHA -A 'p@ss&word' -x AES -X 'pr1v&pass'
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -65,9 +69,9 @@ class SnmpProbe extends LnmsCommand
 
         // SNMPv3 options
         $this->addOption('security-name', 'u', InputOption::VALUE_REQUIRED, 'SNMPv3 security/user name', 'root');
-        $this->addOption('auth-password', 'A', InputOption::VALUE_REQUIRED, 'SNMPv3 authentication password');
+        $this->addOption('auth-password', 'A', InputOption::VALUE_REQUIRED, 'SNMPv3 authentication password (quote if it contains shell special characters)');
         $this->addOption('auth-protocol', 'a', InputOption::VALUE_REQUIRED, 'SNMPv3 auth protocol (MD5, SHA, SHA-256, SHA-512)', 'MD5');
-        $this->addOption('privacy-password', 'X', InputOption::VALUE_REQUIRED, 'SNMPv3 privacy/encryption password');
+        $this->addOption('privacy-password', 'X', InputOption::VALUE_REQUIRED, 'SNMPv3 privacy/encryption password (quote if it contains shell special characters)');
         $this->addOption('privacy-protocol', 'x', InputOption::VALUE_REQUIRED, 'SNMPv3 privacy protocol (AES, DES, AES-256)', 'AES');
     }
 
