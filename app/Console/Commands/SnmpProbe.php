@@ -48,6 +48,7 @@ use LibreNMS\OS;
 use LibreNMS\Polling\ConnectivityHelper;
 use LibreNMS\Polling\ModuleStatus;
 use LibreNMS\Util\Module;
+use LibreNMS\Util\Oid;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -486,10 +487,20 @@ class SnmpProbe extends LnmsCommand
                     continue;
                 }
                 $seen[$oidStr] = true;
+                $oidObj = Oid::of($oidStr);
+                $numericPart = '';
+                if (! $oidObj->isNumeric()) {
+                    try {
+                        $numericPart = ' <fg=gray>(' . $oidObj->toNumeric() . ')</>';
+                    } catch (\Throwable) {
+                        // translation unavailable – skip numeric display
+                    }
+                }
                 $this->line(sprintf(
-                    '  [<fg=cyan>%s</>] <fg=yellow>%s</>',
+                    '  [<fg=cyan>%s</>] <fg=yellow>%s</>%s',
                     $q['method'] ?? 'snmp',
-                    $oidStr
+                    $oidStr,
+                    $numericPart
                 ));
             }
         }
