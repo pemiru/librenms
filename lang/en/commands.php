@@ -404,6 +404,9 @@ return [
         'textual' => 'Textual',
         'value' => 'Value',
     ],
+    'snmp:probe' => [
+        'description' => 'Run a full SNMP discovery probe against a host without requiring a database',
+    ],
     'translation:generate' => [
         'description' => 'Generate updated json language files for use in the web frontend',
     ],
