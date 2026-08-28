@@ -430,4 +430,18 @@ return [
         'success' => 'Successfully added user: :username',
         'wrong-auth' => 'Warning! You will not be able to log in with this user because you are not using MySQL auth',
     ],
+    'export:zabbix-template' => [
+        'description' => 'Export a device as a Zabbix SNMP template (XML)',
+        'arguments' => [
+            'device spec' => 'Hostname, IP, or device ID to export',
+        ],
+        'options' => [
+            'output' => 'Write XML to this file path instead of stdout',
+        ],
+        'messages' => [
+            'not_found' => 'Device not found: :spec',
+            'write_failed' => 'Failed to write file: :file',
+            'exported' => 'Exported Zabbix template for :hostname to :file',
+        ],
+    ],
 ];
